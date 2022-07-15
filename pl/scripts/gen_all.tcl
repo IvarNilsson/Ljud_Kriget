@@ -1,5 +1,8 @@
-# vivado -notrace -mode tcl -source creator.tcl
+# vivado -notrace -mode batch -source creator.tcl
 
+# Make sure boards are installed
+xhub::install [xhub::get_xitems digilentinc.com:xilinx_board_store:zybo-z7-* ]
+xhub::update  [xhub::get_xitems digilentinc.com:xilinx_board_store:zybo-z7-* ]
 
 # Create the project and directory structure
 set ROOT [file normalize [file join [file dirname [info script]] .. ]]
@@ -12,22 +15,13 @@ file mkdir $outputdir
 create_project acoustic_warfare $outputdir -force
 
 # Change the board_part to your board
-set_property board_part digilentinc.com:zybo-z7-10:part0:1.1 [current_project]
+set_property board_part [get_board_parts *zybo-z7-10* ] [current_project]
 
 set_property target_language VHDL [current_project]
 
 # Add sources to the project
-
-add_files [file join "$ROOT" src wrappers aw_top.vhd]
-add_files [file join "$ROOT" src wrappers sample_wrapper.vhd]
-
-add_files [file join "$ROOT" src sample_data collector.vhd]
-add_files [file join "$ROOT" src sample_data full_sample.vhd]
-add_files [file join "$ROOT" src sample_data sample.vhd]
-
-add_files [file join "$ROOT" src ws_pulse ws_pulse.vhd]
-
-add_files [file join "$ROOT" src matrix_package.vhd]
+read_vhdl -vhdl_2008 [file join "$ROOT" src *.vhd]
+read_vhdl -vhdl_2008 [file join "$ROOT" src * *.vhd]
 
 add_files -fileset constrs_1 [file join "$ROOT" src constraint.xdc]
 
@@ -51,7 +45,7 @@ create_bd_design "clk_wiz_bd"
 update_compile_order -fileset sources_1
 
 startgroup
-create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.4 clk_wiz_0
+create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz clk_wiz_0
 endgroup
 
 set_property -dict [list CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {125} CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {25} CONFIG.MMCM_DIVCLK_DIVIDE {1} CONFIG.MMCM_CLKOUT0_DIVIDE_F {8.000} CONFIG.MMCM_CLKOUT1_DIVIDE {40} CONFIG.NUM_OUT_CLKS {2} CONFIG.CLKOUT1_JITTER {125.247} CONFIG.CLKOUT2_JITTER {175.402} CONFIG.CLKOUT2_PHASE_ERROR {98.575}] [get_bd_cells clk_wiz_0]
